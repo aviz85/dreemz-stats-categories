@@ -1,0 +1,90 @@
+[
+  {
+    "post_id": "0bae691e-2f18-4be8-9db4-6cee7346911c",
+    "title": "להתקבל ליחידת כלבנים",
+    "username": "Naama_Roded",
+    "analysis": {
+      "summary": "The post appears to be about getting accepted into a canine unit.",
+      "category": "Personal Goals",
+      "subcategory": "Career",
+      "sentiment": "neutral",
+      "keywords": [
+        "canine unit",
+        "acceptance",
+        "career"
+      ]
+    },
+    "status": "success"
+  },
+  {
+    "post_id": "07baa4f0-0cb8-4886-8d52-2f4d8fcf4533",
+    "title": "לאמץ לבצע אורך  מינימליסטי ולהיפטר מכל דבר לא נחוץ ומיותר",
+    "username": "lene",
+    "analysis": {
+      "summary": "The post encourages minimalism, advising to eliminate unnecessary things and focus on what's truly important.",
+      "category": "Personal Goals",
+      "subcategory": "Minimalism and simplicity",
+      "sentiment": "positive",
+      "keywords": [
+        "minimalism",
+        "simplify",
+        "eliminate"
+      ]
+    },
+    "status": "success"
+  },
+  {
+    "post_id": "67170660-68aa-44a3-b8fd-e1df1ceb7003",
+    "title": "לפתוח אתר קניות מוצלח כמו שיין וסאפורו עם דברים של בנות",
+    "username": "agam_glassman",
+    "analysis": {
+      "summary": "The post discusses opening a successful online shopping site like Shein and Saporro with things related to girls.",
+      "category": "Career",
+      "subcategory": "Entrepreneurship",
+      "sentiment": "neutral",
+      "keywords": [
+        "online shopping",
+        "Shein",
+        "Saporro",
+        "entrepreneurship"
+      ]
+    },
+    "status": "success"
+  },
+  {
+    "post_id": "74eb2e16-1bf7-4418-ae7c-5f391f757619",
+    "title": "אופנוע לילדים ללא רישיון לבני נוער עד גיל 16",
+    "username": "obvious",
+    "analysis": {
+      "summary": "A post about motorcycles for children under the age of 16 without a license, targeting young boys.",
+      "category": "Hobbies",
+      "subcategory": "Youth Activities",
+      "sentiment": "neutral",
+      "keywords": [
+        "motorcycles",
+        "children",
+        "youth",
+        "license"
+      ]
+    },
+    "status": "success"
+  },
+  {
+    "post_id": "24b987d7-2dac-4337-9b72-23b81e82fccf",
+    "title": "ליצור ערוץ טיק טוק מצליח שיהיה עם מיליון עוקבים כמו של ישראב",
+    "username": "thhdhuytjh",
+    "analysis": {
+      "summary": "The poster aims to create a successful TikTok channel with a million followers, similar to that of Israeli influencer Yishai.",
+      "category": "Personal Goals",
+      "subcategory": "Social Media",
+      "sentiment": "positive",
+      "keywords": [
+        "TikTok",
+        "influencer",
+        "Yishai",
+        "million followers"
+      ]
+    },
+    "status": "success"
+  }
+]
