@@ -1,0 +1,32 @@
+services:
+  - type: web
+    name: dreemz-analytics-dashboard
+    env: python
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "gunicorn --bind 0.0.0.0:$PORT app:app"
+    plan: free
+    healthCheckPath: /api/status
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.9.18"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: dreemz-db
+          property: connectionString
+
+  # Temporary migration service (remove after migration)
+  - type: worker
+    name: dreemz-migrator
+    env: python
+    buildCommand: "pip install -r requirements.txt && pip install sqlite3"
+    startCommand: "python migrate_to_postgres.py"
+    plan: free
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: dreemz-db
+          property: connectionString
+
+databases:
+  - name: dreemz-db
+    plan: free
