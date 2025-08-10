@@ -172,6 +172,7 @@ def run_import_in_background():
                 original_id VARCHAR(255),
                 username VARCHAR(255),
                 age_at_dream INTEGER,
+                original_title TEXT,
                 normalized_title_v3 TEXT,
                 category_1 TEXT,
                 subcategory_1 TEXT,
@@ -185,14 +186,15 @@ def run_import_in_background():
         
         # Count total rows for progress tracking
         import_status['message'] = 'Counting rows in CSV...'
-        with open('dreams_export.csv', 'r', encoding='utf-8') as f:
+        csv_file = 'dreams_export_with_titles.csv' if os.path.exists('dreams_export_with_titles.csv') else 'dreams_export.csv'
+        with open(csv_file, 'r', encoding='utf-8') as f:
             total_rows = sum(1 for line in f) - 1  # Subtract header
         
         import_status['total'] = total_rows
         import_status['message'] = f'Importing {total_rows:,} dreams...'
         
         # Import CSV data
-        with open('dreams_export.csv', 'r', encoding='utf-8') as csvfile:
+        with open(csv_file, 'r', encoding='utf-8') as csvfile:
             reader = csv.reader(csvfile)
             header = next(reader)  # Skip header
             
@@ -222,10 +224,10 @@ def run_import_in_background():
                     # Insert batch
                     cursor.executemany("""
                         INSERT INTO dreams (
-                            original_id, username, age_at_dream, normalized_title_v3,
+                            original_id, username, age_at_dream, original_title, normalized_title_v3,
                             category_1, subcategory_1, category_2, subcategory_2,
                             category_3, subcategory_3
-                        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                     """, batch)
                     
                     rows_imported += len(batch)
@@ -239,10 +241,10 @@ def run_import_in_background():
             if batch:
                 cursor.executemany("""
                     INSERT INTO dreams (
-                        original_id, username, age_at_dream, normalized_title_v3,
+                        original_id, username, age_at_dream, original_title, normalized_title_v3,
                         category_1, subcategory_1, category_2, subcategory_2,
                         category_3, subcategory_3
-                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 """, batch)
                 rows_imported += len(batch)
                 import_status['progress'] = rows_imported
@@ -587,6 +589,7 @@ def api_dream_details(normalized_title):
                 original_id,
                 username,
                 age_at_dream,
+                original_title,
                 category_1,
                 subcategory_1,
                 category_2,
@@ -605,6 +608,7 @@ def api_dream_details(normalized_title):
                 'original_id': row['original_id'],
                 'username': row['username'],
                 'age': row['age_at_dream'],
+                'original_title': row['original_title'],
                 'categories': [
                     {'category': row['category_1'], 'subcategory': row['subcategory_1']} if row['category_1'] else None,
                     {'category': row['category_2'], 'subcategory': row['subcategory_2']} if row['category_2'] else None,
