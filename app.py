@@ -372,10 +372,10 @@ def api_unique_dreams():
         for row in cursor.fetchall():
             dreams.append({
                 'normalized_title': row['normalized_title_v3'],
-                'count': row['count'],
+                'count': int(row['count']) if row['count'] else 0,
                 'avg_age': round(float(row['avg_age']), 1) if row['avg_age'] else None,
-                'min_age': row['min_age'],
-                'max_age': row['max_age']
+                'min_age': int(row['min_age']) if row['min_age'] else None,
+                'max_age': int(row['max_age']) if row['max_age'] else None
             })
         
         conn.close()
@@ -504,10 +504,10 @@ def api_categories_analysis():
         for row in cursor.fetchall():
             categories_data.append({
                 'category': row['category'],
-                'count': row['dream_count'],
-                'avg_age': float(row['avg_age']) if row['avg_age'] else None,
-                'min_age': row['min_age'],
-                'max_age': row['max_age'],
+                'count': int(row['dream_count']) if row['dream_count'] else 0,
+                'avg_age': round(float(row['avg_age']), 1) if row['avg_age'] else None,
+                'min_age': int(row['min_age']) if row['min_age'] else None,
+                'max_age': int(row['max_age']) if row['max_age'] else None,
                 'gender_dist': row['genders'],
                 'top_age_group': row['age_group']
             })
@@ -564,10 +564,10 @@ def api_subcategories_analysis():
         for row in cursor.fetchall():
             categories_data.append({
                 'category': row['category'],
-                'count': row['dream_count'],
-                'avg_age': float(row['avg_age']) if row['avg_age'] else None,
-                'min_age': row['min_age'],
-                'max_age': row['max_age'],
+                'count': int(row['dream_count']) if row['dream_count'] else 0,
+                'avg_age': round(float(row['avg_age']), 1) if row['avg_age'] else None,
+                'min_age': int(row['min_age']) if row['min_age'] else None,
+                'max_age': int(row['max_age']) if row['max_age'] else None,
                 'gender_dist': row['genders'],
                 'top_age_group': row['age_group']
             })
