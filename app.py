@@ -72,10 +72,13 @@ import_status = {
 def get_db_connection():
     """Get PostgreSQL database connection"""
     database_url = os.environ.get('DATABASE_URL')
+    logger.info("Establishing database connection...")
     if database_url:
+        logger.info(f"Using DATABASE_URL: {database_url[:50]}...")
         return psycopg2.connect(database_url)
     else:
         # Fallback for local development
+        logger.info("Using local database connection")
         return psycopg2.connect(
             host=os.environ.get('DB_HOST', 'localhost'),
             database=os.environ.get('DB_NAME', 'dreams'),
@@ -83,6 +86,28 @@ def get_db_connection():
             password=os.environ.get('DB_PASSWORD', ''),
             port=os.environ.get('DB_PORT', 5432)
         )
+
+def execute_query_with_logging(cursor, query, params=None, endpoint="unknown"):
+    """Execute a query with comprehensive logging"""
+    try:
+        logger.info(f"[{endpoint}] Executing query: {query}")
+        logger.info(f"[{endpoint}] Query parameters: {params}")
+        
+        start_time = time.time()
+        cursor.execute(query, params)
+        execution_time = time.time() - start_time
+        
+        if query.strip().upper().startswith('SELECT'):
+            result_count = cursor.rowcount
+            logger.info(f"[{endpoint}] Query executed successfully in {execution_time:.3f}s, returned {result_count} rows")
+        else:
+            logger.info(f"[{endpoint}] Query executed successfully in {execution_time:.3f}s")
+            
+    except Exception as e:
+        logger.error(f"[{endpoint}] Query execution failed: {e}")
+        logger.error(f"[{endpoint}] Failed query: {query}")
+        logger.error(f"[{endpoint}] Failed params: {params}")
+        raise
 
 def run_import_in_background():
     """Run the CSV import in a background thread"""
@@ -378,7 +403,7 @@ def api_unique_dreams():
         
         # Count total for pagination
         count_query = "SELECT COUNT(DISTINCT normalized_title_v3) as count FROM dreams WHERE " + where_clause
-        cursor.execute(count_query, params)
+        execute_query_with_logging(cursor, count_query, params, "unique-dreams-count")
         total_count = cursor.fetchone()['count']
         
         # Get the data
@@ -412,7 +437,7 @@ def api_unique_dreams():
             LIMIT %s OFFSET %s
         """.format(where_clause, order_clause, sort_direction)
         
-        cursor.execute(main_query, params + [int(limit), int(offset)])
+        execute_query_with_logging(cursor, main_query, params + [int(limit), int(offset)], "unique-dreams-main")
         
         dreams = []
         for row in cursor.fetchall():
@@ -431,12 +456,14 @@ def api_unique_dreams():
         
         conn.close()
         
-        return jsonify({
+        response_data = {
             'dreams': dreams if dreams else [],
             'total_count': total_count if total_count else 0,
             'page': offset // limit,
             'per_page': limit
-        })
+        }
+        logger.info(f"[unique-dreams] Returning response with {len(dreams)} dreams, total_count: {total_count}")
+        return jsonify(response_data)
     except Exception as e:
         log_api_call('/api/unique-dreams', params_log, str(e))
         return jsonify({'error': str(e), 'dreams': [], 'total_count': 0}), 500
@@ -516,11 +543,14 @@ def api_categories_analysis():
     min_age = request.args.get('min_age', 3, type=int)
     max_age = request.args.get('max_age', 125, type=int)
     
+    params_log = {'min_age': min_age, 'max_age': max_age}
+    log_api_call('/api/categories-analysis', params_log)
+    
     try:
         conn = get_db_connection()
         cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         
-        cursor.execute("""
+        categories_query = """
             WITH category_stats AS (
                 SELECT 
                     category_1 as category,
@@ -550,7 +580,8 @@ def api_categories_analysis():
                 END as age_group
             FROM category_stats cs
             ORDER BY cs.dream_count DESC
-        """, (min_age, max_age))
+        """
+        execute_query_with_logging(cursor, categories_query, (min_age, max_age), "categories-analysis")
         
         categories_data = []
         for row in cursor.fetchall():
@@ -566,8 +597,10 @@ def api_categories_analysis():
         
         conn.close()
         
+        logger.info(f"[categories-analysis] Returning {len(categories_data)} categories")
         return jsonify({'categories': categories_data if categories_data else []})
     except Exception as e:
+        log_api_call('/api/categories-analysis', params_log, str(e))
         return jsonify({'error': str(e), 'categories': []}), 500
 
 @app.route('/api/subcategories-analysis')
