@@ -161,11 +161,13 @@ def run_import_in_background():
         
         # Connect to database
         import_status['message'] = 'Connecting to database...'
+        import_status['last_update'] = datetime.now().isoformat()
         conn = get_db_connection()
         cursor = conn.cursor()
         
         # Create table structure
         import_status['message'] = 'Creating table structure...'
+        import_status['last_update'] = datetime.now().isoformat()
         cursor.execute("""
             DROP TABLE IF EXISTS dreams CASCADE;
             CREATE TABLE dreams (
@@ -187,6 +189,7 @@ def run_import_in_background():
         
         # Count total rows for progress tracking
         import_status['message'] = 'Counting rows in CSV...'
+        import_status['last_update'] = datetime.now().isoformat()
         with open(csv_file, 'r', encoding='utf-8') as f:
             total_rows = sum(1 for line in f) - 1  # Subtract header
         
@@ -203,20 +206,23 @@ def run_import_in_background():
             rows_imported = 0
             
             for row in reader:
-                # Clean data
+                # Clean data - simpler approach
                 clean_row = []
-                for value in row:
+                for i, value in enumerate(row):
                     if value == '' or value == 'None':
                         clean_row.append(None)
-                    else:
+                    elif i == 2:  # age_at_dream column (0-indexed: original_id, username, age_at_dream)
                         try:
-                            # Try to convert to integer for age
-                            if 'age' in header[len(clean_row)] if len(clean_row) < len(header) else False:
-                                clean_row.append(int(value) if value.isdigit() else value)
-                            else:
-                                clean_row.append(value)
+                            clean_row.append(int(value) if value.isdigit() else None)
                         except:
-                            clean_row.append(value)
+                            clean_row.append(None)
+                    else:
+                        clean_row.append(value)
+                
+                # Ensure we have exactly 11 columns
+                while len(clean_row) < 11:
+                    clean_row.append(None)
+                clean_row = clean_row[:11]  # Trim if too many columns
                 
                 batch.append(clean_row)
                 
