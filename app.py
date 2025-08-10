@@ -20,6 +20,25 @@ from flask_cors import CORS
 app = Flask(__name__)
 CORS(app)
 
+# Debug static file serving
+@app.route('/static/<path:filename>')
+def custom_static(filename):
+    """Debug static file serving"""
+    static_dir = os.path.join(app.root_path, 'static')
+    file_path = os.path.join(static_dir, filename)
+    
+    logger.info(f"Static file request: {filename}")
+    logger.info(f"Static dir: {static_dir}")
+    logger.info(f"File path: {file_path}")
+    logger.info(f"File exists: {os.path.exists(file_path)}")
+    
+    if os.path.exists(file_path):
+        file_size = os.path.getsize(file_path)
+        logger.info(f"File size: {file_size} bytes")
+    
+    from flask import send_from_directory
+    return send_from_directory(static_dir, filename)
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
