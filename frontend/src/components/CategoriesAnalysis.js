@@ -35,6 +35,7 @@ import {
   GetApp as ExportIcon,
   Visibility as ViewIcon,
   Category as CategoryIcon,
+  Refresh as RefreshIcon,
 } from '@mui/icons-material';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import api from '../utils/api';
@@ -160,6 +161,8 @@ const CategoriesAnalysis = () => {
   const [maxCount, setMaxCount] = useState(10000);
   const [minAge, setMinAge] = useState(13);
   const [maxAge, setMaxAge] = useState(60);
+  const [appliedMinAge, setAppliedMinAge] = useState(13);
+  const [appliedMaxAge, setAppliedMaxAge] = useState(60);
   const [sortBy, setSortBy] = useState('count');
   const [sortOrder, setSortOrder] = useState('desc');
   const [viewType, setViewType] = useState('categories'); // 'categories' or 'subcategories'
@@ -180,8 +183,8 @@ const CategoriesAnalysis = () => {
       const endpoint = viewType === 'categories' ? '/categories-analysis' : '/subcategories-analysis';
       const response = await api.get(endpoint, {
         params: {
-          min_age: minAge,
-          max_age: maxAge
+          min_age: appliedMinAge,
+          max_age: appliedMaxAge
         }
       });
       const data = response.data.categories || [];
@@ -201,7 +204,7 @@ const CategoriesAnalysis = () => {
     } finally {
       setLoading(false);
     }
-  }, [minAge, maxAge, viewType]);
+  }, [appliedMinAge, appliedMaxAge, viewType]);
 
   // Apply filters
   useEffect(() => {
@@ -243,15 +246,17 @@ const CategoriesAnalysis = () => {
     setPage(0); // Reset to first page when filters change
   }, [categories, searchTerm, minCount, maxCount, sortBy, sortOrder]);
 
-  // Trigger refetch when age filters or view type change
+  // Load data on mount and when view type changes
   useEffect(() => {
     fetchCategories();
-  }, [minAge, maxAge, viewType]);
+  }, [viewType, fetchCategories]);
 
-  // Load data on mount  
-  useEffect(() => {
+  // Handle apply filters
+  const handleApplyFilters = () => {
+    setAppliedMinAge(minAge);
+    setAppliedMaxAge(maxAge);
     fetchCategories();
-  }, []); // Only on mount, age changes handled separately
+  };
 
   // Handle category details
   const handleViewCategory = (category) => {
@@ -481,9 +486,12 @@ const CategoriesAnalysis = () => {
                 />
               </Grid>
               
-              <Grid item xs={12} md={6}>
+              <Grid item xs={12} md={5}>
                 <Typography gutterBottom>
                   Age Range: {minAge} - {maxAge} years
+                  {(minAge !== appliedMinAge || maxAge !== appliedMaxAge) && 
+                    <Chip label="Not applied" size="small" color="warning" sx={{ ml: 1 }} />
+                  }
                 </Typography>
                 <Slider
                   value={[minAge, maxAge]}
@@ -504,6 +512,21 @@ const CategoriesAnalysis = () => {
                     { value: 125, label: '125' }
                   ]}
                 />
+              </Grid>
+              
+              <Grid item xs={12} md={1}>
+                <Box display="flex" alignItems="center" justifyContent="center" height="100%">
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    onClick={handleApplyFilters}
+                    startIcon={<RefreshIcon />}
+                    disabled={loading || (minAge === appliedMinAge && maxAge === appliedMaxAge)}
+                    fullWidth
+                  >
+                    Apply
+                  </Button>
+                </Box>
               </Grid>
             </Grid>
           </Paper>
