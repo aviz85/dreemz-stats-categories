@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unique Dreams Analysis - Dream Analytics</title>
+    <link rel="stylesheet" href="/static/css/dashboard.css">
+</head>
+<body>
+    <nav class="nav">
+        <div class="nav-container">
+            <h1>🎯 Dream Analytics</h1>
+            <div class="nav-tabs">
+                <a href="/" class="nav-tab">Overview</a>
+                <a href="/dreams" class="nav-tab active">Unique Dreams</a>
+                <a href="/categories" class="nav-tab">Categories</a>
+                <a href="/subcategories" class="nav-tab">Subcategories</a>
+                <a href="/dream-details" class="nav-tab">Dream Explorer</a>
+                <a href="/import" class="nav-tab">Import Data</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- Stats Overview -->
+        <div class="stats" id="stats">
+            <div class="stat-card">
+                <div class="stat-number" id="totalDreams">-</div>
+                <div class="stat-label">Total Dreams</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="uniqueTitles">-</div>
+                <div class="stat-label">Unique Titles</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="categories">-</div>
+                <div class="stat-label">Categories</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="subcategories">-</div>
+                <div class="stat-label">Subcategories</div>
+            </div>
+        </div>
+
+        <!-- Unique Dreams Analysis Section -->
+        <div class="section">
+            <h2>🔍 Unique Dreams Analysis</h2>
+            <div class="controls">
+                <input type="text" id="searchInput" placeholder="Search dreams..." />
+                <input type="number" id="ageFrom" placeholder="Min age" min="3" max="125" />
+                <input type="number" id="ageTo" placeholder="Max age" min="3" max="125" />
+                <select id="sortBy">
+                    <option value="count">Sort by Count</option>
+                    <option value="title">Sort by Title</option>
+                    <option value="avg_age">Sort by Avg Age</option>
+                </select>
+                <select id="limitSelect">
+                    <option value="50">Show 50</option>
+                    <option value="100">Show 100</option>
+                    <option value="500">Show 500</option>
+                    <option value="1000">Show 1000</option>
+                    <option value="-1">Show All (Long Tail)</option>
+                </select>
+                <button onclick="dreamsAnalysis.search()">Search</button>
+                <button onclick="dreamsAnalysis.clearFilters()">Clear</button>
+            </div>
+            
+            <div id="dreamFilters" class="filter-summary" style="display: none;"></div>
+            
+            <div class="table-container">
+                <table id="dreamsTable">
+                    <thead>
+                        <tr>
+                            <th>Dream Title</th>
+                            <th>Count</th>
+                            <th>Avg Age</th>
+                            <th>Age Range</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dreamsBody">
+                        <tr><td colspan="5" class="loading">Loading dreams...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="pagination">
+                <button onclick="dreamsAnalysis.previousPage()" id="prevBtn" disabled>Previous</button>
+                <span id="pageInfo">Page 1</span>
+                <button onclick="dreamsAnalysis.nextPage()" id="nextBtn">Next</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/common.js"></script>
+    <script src="/static/js/dreams.js"></script>
+</body>
+</html>

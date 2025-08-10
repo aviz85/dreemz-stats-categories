@@ -326,8 +326,33 @@ def debug_files():
 
 @app.route('/')
 def index():
-    """Serve the working simple dashboard"""
-    return render_template('simple_dashboard.html')
+    """Serve the main dashboard overview"""
+    return render_template('dashboard.html')
+
+@app.route('/dreams')
+def dreams_page():
+    """Serve the unique dreams analysis page"""
+    return render_template('dreams.html')
+
+@app.route('/categories')
+def categories_page():
+    """Serve the categories analysis page"""
+    return render_template('categories.html')
+
+@app.route('/subcategories')
+def subcategories_page():
+    """Serve the subcategories analysis page"""
+    return render_template('subcategories.html')
+
+@app.route('/dream-details')
+def dream_details_page():
+    """Serve the dream details explorer page"""
+    return render_template('dream-details.html')
+
+@app.route('/complete')
+def complete_dashboard():
+    """Serve the complete single-page dashboard"""
+    return render_template('complete_dashboard.html')
 
 @app.route('/react')
 def react_dashboard():

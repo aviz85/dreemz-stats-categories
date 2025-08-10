@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Categories Analysis - Dream Analytics</title>
+    <link rel="stylesheet" href="/static/css/dashboard.css">
+</head>
+<body>
+    <nav class="nav">
+        <div class="nav-container">
+            <h1>🎯 Dream Analytics</h1>
+            <div class="nav-tabs">
+                <a href="/" class="nav-tab">Overview</a>
+                <a href="/dreams" class="nav-tab">Unique Dreams</a>
+                <a href="/categories" class="nav-tab active">Categories</a>
+                <a href="/subcategories" class="nav-tab">Subcategories</a>
+                <a href="/dream-details" class="nav-tab">Dream Explorer</a>
+                <a href="/import" class="nav-tab">Import Data</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- Stats Overview -->
+        <div class="stats" id="stats">
+            <div class="stat-card">
+                <div class="stat-number" id="totalDreams">-</div>
+                <div class="stat-label">Total Dreams</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="uniqueTitles">-</div>
+                <div class="stat-label">Unique Titles</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="categories">-</div>
+                <div class="stat-label">Categories</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="subcategories">-</div>
+                <div class="stat-label">Subcategories</div>
+            </div>
+        </div>
+
+        <!-- Categories Analysis Section -->
+        <div class="section">
+            <h2>📊 Categories Analysis</h2>
+            <div class="controls">
+                <input type="number" id="ageFrom" placeholder="Min age" value="13" min="3" max="125" />
+                <input type="number" id="ageTo" placeholder="Max age" value="60" min="3" max="125" />
+                <button onclick="categoriesAnalysis.load()">Load Categories</button>
+                <button onclick="categoriesAnalysis.clearFilters()">Clear</button>
+            </div>
+            
+            <div id="categoryFilters" class="filter-summary" style="display: none;"></div>
+            
+            <div class="table-container">
+                <table id="categoriesTable">
+                    <thead>
+                        <tr>
+                            <th>Category</th>
+                            <th>Dreams Count</th>
+                            <th>Avg Age</th>
+                            <th>Age Range</th>
+                            <th>Age Group</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="categoriesBody">
+                        <tr><td colspan="6" class="loading">Click "Load Categories" to view data...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Category Details Modal (if needed) -->
+        <div id="categoryModal" style="display: none;">
+            <!-- Modal content would go here -->
+        </div>
+    </div>
+
+    <script src="/static/js/common.js"></script>
+    <script src="/static/js/categories.js"></script>
+</body>
+</html>

@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Subcategories Analysis - Dream Analytics</title>
+    <link rel="stylesheet" href="/static/css/dashboard.css">
+</head>
+<body>
+    <nav class="nav">
+        <div class="nav-container">
+            <h1>🎯 Dream Analytics</h1>
+            <div class="nav-tabs">
+                <a href="/" class="nav-tab">Overview</a>
+                <a href="/dreams" class="nav-tab">Unique Dreams</a>
+                <a href="/categories" class="nav-tab">Categories</a>
+                <a href="/subcategories" class="nav-tab active">Subcategories</a>
+                <a href="/dream-details" class="nav-tab">Dream Explorer</a>
+                <a href="/import" class="nav-tab">Import Data</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- Stats Overview -->
+        <div class="stats" id="stats">
+            <div class="stat-card">
+                <div class="stat-number" id="totalDreams">-</div>
+                <div class="stat-label">Total Dreams</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="uniqueTitles">-</div>
+                <div class="stat-label">Unique Titles</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="categories">-</div>
+                <div class="stat-label">Categories</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="subcategories">-</div>
+                <div class="stat-label">Subcategories</div>
+            </div>
+        </div>
+
+        <!-- Subcategories Analysis Section -->
+        <div class="section">
+            <h2>🎯 Subcategories Analysis</h2>
+            <div class="controls">
+                <input type="number" id="ageFrom" placeholder="Min age" value="18" min="3" max="125" />
+                <input type="number" id="ageTo" placeholder="Max age" value="25" min="3" max="125" />
+                <input type="text" id="searchInput" placeholder="Search subcategories..." />
+                <button onclick="subcategoriesAnalysis.load()">Load Subcategories</button>
+                <button onclick="subcategoriesAnalysis.clearFilters()">Clear</button>
+            </div>
+            
+            <div id="subcategoryFilters" class="filter-summary" style="display: none;"></div>
+            
+            <div class="table-container">
+                <table id="subcategoriesTable">
+                    <thead>
+                        <tr>
+                            <th>Subcategory</th>
+                            <th>Dreams Count</th>
+                            <th>Avg Age</th>
+                            <th>Age Range</th>
+                            <th>Age Group</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="subcategoriesBody">
+                        <tr><td colspan="6" class="loading">Click "Load Subcategories" to view data...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/common.js"></script>
+    <script src="/static/js/subcategories.js"></script>
+</body>
+</html>
