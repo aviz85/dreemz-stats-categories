@@ -271,6 +271,43 @@ def run_import_in_background():
         import_status['running'] = False
         import_status['last_update'] = datetime.now().isoformat()
 
+@app.route('/debug-files')
+def debug_files():
+    """Debug file system for static files"""
+    debug_info = {}
+    
+    # Check current directory
+    debug_info['current_dir'] = os.getcwd()
+    debug_info['files_in_root'] = os.listdir('.')
+    
+    # Check static directory
+    static_dir = os.path.join(os.getcwd(), 'static')
+    debug_info['static_dir'] = static_dir
+    debug_info['static_dir_exists'] = os.path.exists(static_dir)
+    
+    if os.path.exists(static_dir):
+        debug_info['static_files'] = os.listdir(static_dir)
+        
+        # Check bundle.js specifically
+        bundle_path = os.path.join(static_dir, 'bundle.js')
+        debug_info['bundle_path'] = bundle_path
+        debug_info['bundle_exists'] = os.path.exists(bundle_path)
+        
+        if os.path.exists(bundle_path):
+            debug_info['bundle_size'] = os.path.getsize(bundle_path)
+            debug_info['bundle_permissions'] = oct(os.stat(bundle_path).st_mode)
+    
+    # Check templates
+    templates_dir = os.path.join(os.getcwd(), 'templates')
+    debug_info['templates_dir'] = templates_dir
+    debug_info['templates_exist'] = os.path.exists(templates_dir)
+    
+    if os.path.exists(templates_dir):
+        debug_info['template_files'] = os.listdir(templates_dir)
+    
+    logger.info(f"Debug info: {debug_info}")
+    return jsonify(debug_info)
+
 @app.route('/')
 def index():
     """Serve the main dashboard"""
