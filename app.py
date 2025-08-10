@@ -569,41 +569,88 @@ def api_categories_analysis():
     """Get category statistics for analysis"""
     min_age = request.args.get('min_age', 3, type=int)
     max_age = request.args.get('max_age', 125, type=int)
+    include_all = request.args.get('include_all', 'false').lower() == 'true'
     
     conn = sqlite3.connect("dreams_complete.db")
     cursor = conn.cursor()
     
-    cursor.execute("""
-        WITH category_stats AS (
+    if include_all:
+        # Count all categories (1, 2, 3) - dreams can appear multiple times
+        cursor.execute("""
+            WITH all_categories AS (
+                SELECT category_1 as category, age_at_dream FROM dreams 
+                WHERE category_1 IS NOT NULL AND category_1 != '' 
+                  AND age_at_dream >= ? AND age_at_dream <= ?
+                UNION ALL
+                SELECT category_2 as category, age_at_dream FROM dreams 
+                WHERE category_2 IS NOT NULL AND category_2 != ''
+                  AND age_at_dream >= ? AND age_at_dream <= ?
+                UNION ALL
+                SELECT category_3 as category, age_at_dream FROM dreams 
+                WHERE category_3 IS NOT NULL AND category_3 != ''
+                  AND age_at_dream >= ? AND age_at_dream <= ?
+            ),
+            category_stats AS (
+                SELECT 
+                    category,
+                    COUNT(*) as dream_count,
+                    AVG(age_at_dream) as avg_age,
+                    MIN(age_at_dream) as min_age,
+                    MAX(age_at_dream) as max_age
+                FROM all_categories
+                GROUP BY category
+            )
             SELECT 
-                category_1 as category,
-                COUNT(*) as dream_count,
-                AVG(age_at_dream) as avg_age,
-                MIN(age_at_dream) as min_age,
-                MAX(age_at_dream) as max_age
-            FROM dreams 
-            WHERE category_1 IS NOT NULL AND category_1 != ''
-              AND age_at_dream >= ? AND age_at_dream <= ?
-            GROUP BY category_1
-        )
-        SELECT 
-            cs.category,
-            cs.dream_count,
-            cs.avg_age,
-            cs.min_age,
-            cs.max_age,
-            '' as genders,
-            CASE 
-                WHEN cs.avg_age < 13 THEN 'Under 13'
-                WHEN cs.avg_age < 19 THEN '13-18'
-                WHEN cs.avg_age < 31 THEN '19-30'
-                WHEN cs.avg_age < 46 THEN '31-45'
-                WHEN cs.avg_age < 61 THEN '46-60'
-                ELSE '60+'
-            END as age_group
-        FROM category_stats cs
-        ORDER BY cs.dream_count DESC
-    """, (min_age, max_age))
+                cs.category,
+                cs.dream_count,
+                cs.avg_age,
+                cs.min_age,
+                cs.max_age,
+                '' as genders,
+                CASE 
+                    WHEN cs.avg_age < 13 THEN 'Under 13'
+                    WHEN cs.avg_age < 19 THEN '13-18'
+                    WHEN cs.avg_age < 31 THEN '19-30'
+                    WHEN cs.avg_age < 46 THEN '31-45'
+                    WHEN cs.avg_age < 61 THEN '46-60'
+                    ELSE '60+'
+                END as age_group
+            FROM category_stats cs
+            ORDER BY cs.dream_count DESC
+        """, (min_age, max_age, min_age, max_age, min_age, max_age))
+    else:
+        # Original query - only category_1
+        cursor.execute("""
+            WITH category_stats AS (
+                SELECT 
+                    category_1 as category,
+                    COUNT(*) as dream_count,
+                    AVG(age_at_dream) as avg_age,
+                    MIN(age_at_dream) as min_age,
+                    MAX(age_at_dream) as max_age
+                FROM dreams 
+                WHERE category_1 IS NOT NULL AND category_1 != ''
+                  AND age_at_dream >= ? AND age_at_dream <= ?
+                GROUP BY category_1
+            )
+            SELECT 
+                cs.category,
+                cs.dream_count,
+                cs.avg_age,
+                cs.min_age,
+                cs.max_age,
+                '' as genders,
+                CASE 
+                    WHEN cs.avg_age < 13 THEN 'Under 13'
+                    WHEN cs.avg_age < 19 THEN '13-18'
+                    WHEN cs.avg_age < 31 THEN '19-30'
+                    WHEN cs.avg_age < 46 THEN '31-45'
+                    WHEN cs.avg_age < 61 THEN '46-60'
+                    ELSE '60+'
+                END as age_group
+            FROM category_stats cs
+            ORDER BY cs.dream_count DESC
+        """, (min_age, max_age))
     
     categories_data = []
     for row in cursor.fetchall():

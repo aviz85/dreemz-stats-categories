@@ -166,6 +166,8 @@ const CategoriesAnalysis = () => {
   const [sortBy, setSortBy] = useState('count');
   const [sortOrder, setSortOrder] = useState('desc');
   const [viewType, setViewType] = useState('categories'); // 'categories' or 'subcategories'
+  const [includeAll, setIncludeAll] = useState(false); // Include all categories (1,2,3) vs just category_1
+  const [allAges, setAllAges] = useState(false); // Include all ages or use age filter
   
   // Pagination
   const [page, setPage] = useState(0);
@@ -183,18 +185,26 @@ const CategoriesAnalysis = () => {
       const endpoint = viewType === 'categories' ? '/categories-analysis' : '/subcategories-analysis';
       const response = await api.get(endpoint, {
         params: {
-          min_age: appliedMinAge,
-          max_age: appliedMaxAge
+          min_age: allAges ? 3 : appliedMinAge,
+          max_age: allAges ? 125 : appliedMaxAge,
+          include_all: includeAll
         }
       });
       const data = response.data.categories || [];
       setCategories(data);
       setFilteredCategories(data);
       
-      // Update max count slider
+      // Update max count slider based on actual data
       if (data.length > 0) {
         const maxCategoryCount = Math.max(...data.map(cat => cat.count));
-        setMaxCount(Math.min(maxCategoryCount, 10000));
+        const newMaxCount = Math.max(maxCategoryCount, 10000); // Ensure it covers all data
+        setMaxCount(newMaxCount);
+        
+        // Reset minCount if it's too high for the data
+        const minCategoryCount = Math.min(...data.map(cat => cat.count));
+        if (minCount > minCategoryCount) {
+          setMinCount(Math.max(1, minCategoryCount));
+        }
       }
     } catch (error) {
       console.error('Failed to fetch categories:', error);
@@ -204,7 +214,7 @@ const CategoriesAnalysis = () => {
     } finally {
       setLoading(false);
     }
-  }, [appliedMinAge, appliedMaxAge, viewType]);
+  }, [appliedMinAge, appliedMaxAge, viewType, includeAll, allAges]);
 
   // Apply filters
   useEffect(() => {
@@ -253,8 +263,10 @@ const CategoriesAnalysis = () => {
 
   // Handle apply filters
   const handleApplyFilters = () => {
-    setAppliedMinAge(minAge);
-    setAppliedMaxAge(maxAge);
+    if (!allAges) {
+      setAppliedMinAge(minAge);
+      setAppliedMaxAge(maxAge);
+    }
     fetchCategories();
   };
 
@@ -317,9 +329,10 @@ const CategoriesAnalysis = () => {
                 </Typography>
                 <Typography variant="subtitle1" color="text.secondary">
                   Analyze dream {viewType}, distributions, and patterns
+                  {includeAll && <Chip label="All Categories (1,2,3)" size="small" color="info" sx={{ ml: 1 }} />}
                 </Typography>
               </div>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
                 <ToggleButtonGroup
                   value={viewType}
                   exclusive
@@ -333,6 +346,22 @@ const CategoriesAnalysis = () => {
                     Subcategories
                   </ToggleButton>
                 </ToggleButtonGroup>
+                
+                {viewType === 'categories' && (
+                  <ToggleButtonGroup
+                    value={includeAll ? 'all' : 'first'}
+                    exclusive
+                    onChange={(e, newValue) => newValue && setIncludeAll(newValue === 'all')}
+                    size="small"
+                  >
+                    <ToggleButton value="first">
+                      First Category Only
+                    </ToggleButton>
+                    <ToggleButton value="all">
+                      All Categories (1,2,3)
+                    </ToggleButton>
+                  </ToggleButtonGroup>
+                )}
                 
                 <Button
                   variant="outlined"
@@ -482,36 +511,53 @@ const CategoriesAnalysis = () => {
                   }}
                   valueLabelDisplay="auto"
                   min={1}
-                  max={10000}
+                  max={Math.max(maxCount, 10000)}
                 />
               </Grid>
               
               <Grid item xs={12} md={5}>
-                <Typography gutterBottom>
-                  Age Range: {minAge} - {maxAge} years
-                  {(minAge !== appliedMinAge || maxAge !== appliedMaxAge) && 
-                    <Chip label="Not applied" size="small" color="warning" sx={{ ml: 1 }} />
-                  }
-                </Typography>
-                <Slider
-                  value={[minAge, maxAge]}
-                  onChange={(e, newValue) => {
-                    setMinAge(newValue[0]);
-                    setMaxAge(newValue[1]);
-                  }}
-                  valueLabelDisplay="auto"
-                  min={3}
-                  max={125}
-                  marks={[
-                    { value: 3, label: '3' },
-                    { value: 13, label: '13' },
-                    { value: 18, label: '18' },
-                    { value: 30, label: '30' },
-                    { value: 45, label: '45' },
-                    { value: 60, label: '60' },
-                    { value: 125, label: '125' }
-                  ]}
-                />
+                <Box display="flex" alignItems="center" gap={2} mb={1}>
+                  <Typography>
+                    Age Range: {allAges ? 'All Ages' : `${minAge} - ${maxAge} years`}
+                    {!allAges && (minAge !== appliedMinAge || maxAge !== appliedMaxAge) && 
+                      <Chip label="Not applied" size="small" color="warning" sx={{ ml: 1 }} />
+                    }
+                  </Typography>
+                  <ToggleButtonGroup
+                    value={allAges ? 'all' : 'range'}
+                    exclusive
+                    onChange={(e, newValue) => newValue && setAllAges(newValue === 'all')}
+                    size="small"
+                  >
+                    <ToggleButton value="range">
+                      Age Range
+                    </ToggleButton>
+                    <ToggleButton value="all">
+                      All Ages
+                    </ToggleButton>
+                  </ToggleButtonGroup>
+                </Box>
+                {!allAges && (
+                  <Slider
+                    value={[minAge, maxAge]}
+                    onChange={(e, newValue) => {
+                      setMinAge(newValue[0]);
+                      setMaxAge(newValue[1]);
+                    }}
+                    valueLabelDisplay="auto"
+                    min={3}
+                    max={125}
+                    marks={[
+                      { value: 3, label: '3' },
+                      { value: 13, label: '13' },
+                      { value: 18, label: '18' },
+                      { value: 30, label: '30' },
+                      { value: 45, label: '45' },
+                      { value: 60, label: '60' },
+                      { value: 125, label: '125' }
+                    ]}
+                  />
+                )}
               </Grid>
               
               <Grid item xs={12} md={1}>
@@ -521,7 +567,7 @@ const CategoriesAnalysis = () => {
                     color="primary"
                     onClick={handleApplyFilters}
                     startIcon={<RefreshIcon />}
-                    disabled={loading || (minAge === appliedMinAge && maxAge === appliedMaxAge)}
+                    disabled={loading || (allAges || (minAge === appliedMinAge && maxAge === appliedMaxAge))}
                     fullWidth
                   >
                     Apply

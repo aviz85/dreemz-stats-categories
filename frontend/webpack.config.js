@@ -37,11 +37,11 @@ module.exports = {
       directory: path.join(__dirname, 'dist'),
     },
     compress: true,
-    port: 3000,
+    port: process.env.PORT || 3001,
     proxy: [
       {
         context: ['/api'],
-        target: 'http://localhost:5000',
+        target: 'http://localhost:5003',
         changeOrigin: true,
       }
     ],
