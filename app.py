@@ -326,8 +326,8 @@ def debug_files():
 
 @app.route('/')
 def index():
-    """Serve the main dashboard overview"""
-    return render_template('dashboard.html')
+    """Serve the dreams analysis page as homepage"""
+    return render_template('dreams.html')
 
 @app.route('/dreams')
 def dreams_page():
@@ -353,6 +353,11 @@ def dream_details_page():
 def complete_dashboard():
     """Serve the complete single-page dashboard"""
     return render_template('complete_dashboard.html')
+
+@app.route('/overview')
+def overview_page():
+    """Serve the overview dashboard (may show 0s due to DB connection)"""
+    return render_template('dashboard.html')
 
 @app.route('/react')
 def react_dashboard():
