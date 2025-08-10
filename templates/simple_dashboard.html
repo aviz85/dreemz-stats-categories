@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dream Analytics Dashboard</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+        }
+        h1 { color: #333; margin-bottom: 30px; text-align: center; }
+        .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .stat-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        .stat-number { font-size: 28px; font-weight: bold; color: #667eea; }
+        .stat-label { font-size: 14px; color: #666; margin-top: 5px; }
+        .section { margin-bottom: 40px; }
+        .section h2 { color: #333; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid #667eea; }
+        .controls { margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap; }
+        input, select, button {
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        button:hover { background: #5a6fd8; }
+        .table-container { background: white; border-radius: 8px; overflow: hidden; border: 1px solid #e1e5e9; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #e1e5e9; }
+        th { background: #f8f9fa; font-weight: 600; }
+        tr:hover { background: #f8f9fa; }
+        .loading { text-align: center; padding: 40px; color: #666; }
+        .error { color: #dc3545; padding: 20px; background: #f8d7da; border-radius: 5px; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 Dream Analytics Dashboard</h1>
+        
+        <!-- Stats Cards -->
+        <div class="stats" id="stats">
+            <div class="stat-card">
+                <div class="stat-number" id="totalDreams">-</div>
+                <div class="stat-label">Total Dreams</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="uniqueTitles">-</div>
+                <div class="stat-label">Unique Titles</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="categories">-</div>
+                <div class="stat-label">Categories</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="subcategories">-</div>
+                <div class="stat-label">Subcategories</div>
+            </div>
+        </div>
+
+        <!-- Unique Dreams Section -->
+        <div class="section">
+            <h2>🔍 Unique Dreams Analysis</h2>
+            <div class="controls">
+                <input type="text" id="searchInput" placeholder="Search dreams..." />
+                <input type="number" id="ageFrom" placeholder="Min age" min="3" max="125" />
+                <input type="number" id="ageTo" placeholder="Max age" min="3" max="125" />
+                <select id="sortBy">
+                    <option value="count">Sort by Count</option>
+                    <option value="title">Sort by Title</option>
+                    <option value="avg_age">Sort by Avg Age</option>
+                </select>
+                <button onclick="searchDreams()">Search</button>
+                <button onclick="clearFilters()">Clear</button>
+            </div>
+            <div class="table-container">
+                <table id="dreamsTable">
+                    <thead>
+                        <tr>
+                            <th>Dream Title</th>
+                            <th>Count</th>
+                            <th>Avg Age</th>
+                            <th>Age Range</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dreamsBody">
+                        <tr><td colspan="4" class="loading">Loading dreams...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <div style="margin-top: 20px; text-align: center;">
+                <button onclick="loadMore()">Load More Dreams</button>
+            </div>
+        </div>
+
+        <!-- Categories Section -->
+        <div class="section">
+            <h2>📊 Categories Analysis</h2>
+            <div class="controls">
+                <input type="number" id="catAgeFrom" placeholder="Min age" value="13" />
+                <input type="number" id="catAgeTo" placeholder="Max age" value="60" />
+                <button onclick="loadCategories()">Load Categories</button>
+            </div>
+            <div class="table-container">
+                <table id="categoriesTable">
+                    <thead>
+                        <tr>
+                            <th>Category</th>
+                            <th>Dreams Count</th>
+                            <th>Avg Age</th>
+                            <th>Age Range</th>
+                        </tr>
+                    </thead>
+                    <tbody id="categoriesBody">
+                        <tr><td colspan="4" class="loading">Click "Load Categories" to view data...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentOffset = 0;
+        const limit = 50;
+
+        // Load initial data
+        document.addEventListener('DOMContentLoaded', function() {
+            loadStats();
+            searchDreams();
+        });
+
+        async function loadStats() {
+            try {
+                const response = await fetch('/api/status');
+                const data = await response.json();
+                
+                if (data.database) {
+                    document.getElementById('totalDreams').textContent = 
+                        data.database.total_dreams?.toLocaleString() || '0';
+                    document.getElementById('uniqueTitles').textContent = 
+                        data.database.unique_titles?.toLocaleString() || '0';
+                    document.getElementById('categories').textContent = 
+                        data.database.categories || '0';
+                    document.getElementById('subcategories').textContent = 
+                        data.database.subcategories || '0';
+                }
+            } catch (error) {
+                console.error('Error loading stats:', error);
+                showError('Failed to load database statistics');
+            }
+        }
+
+        async function searchDreams() {
+            currentOffset = 0;
+            const search = document.getElementById('searchInput').value;
+            const ageFrom = document.getElementById('ageFrom').value;
+            const ageTo = document.getElementById('ageTo').value;
+            const sortBy = document.getElementById('sortBy').value;
+
+            const params = new URLSearchParams({
+                limit: limit,
+                offset: currentOffset,
+                sort: sortBy,
+                order: 'desc'
+            });
+
+            if (search) params.append('search', search);
+            if (ageFrom) params.append('age_from', ageFrom);
+            if (ageTo) params.append('age_to', ageTo);
+
+            try {
+                const response = await fetch(`/api/unique-dreams?${params}`);
+                const data = await response.json();
+
+                if (data.error) {
+                    showError('API Error: ' + data.error);
+                    return;
+                }
+
+                displayDreams(data.dreams || [], false);
+                currentOffset = limit;
+            } catch (error) {
+                console.error('Error searching dreams:', error);
+                showError('Failed to load dreams data');
+            }
+        }
+
+        async function loadMore() {
+            const search = document.getElementById('searchInput').value;
+            const ageFrom = document.getElementById('ageFrom').value;
+            const ageTo = document.getElementById('ageTo').value;
+            const sortBy = document.getElementById('sortBy').value;
+
+            const params = new URLSearchParams({
+                limit: limit,
+                offset: currentOffset,
+                sort: sortBy,
+                order: 'desc'
+            });
+
+            if (search) params.append('search', search);
+            if (ageFrom) params.append('age_from', ageFrom);
+            if (ageTo) params.append('age_to', ageTo);
+
+            try {
+                const response = await fetch(`/api/unique-dreams?${params}`);
+                const data = await response.json();
+
+                if (data.error) {
+                    showError('API Error: ' + data.error);
+                    return;
+                }
+
+                displayDreams(data.dreams || [], true);
+                currentOffset += limit;
+            } catch (error) {
+                console.error('Error loading more dreams:', error);
+                showError('Failed to load more dreams');
+            }
+        }
+
+        function displayDreams(dreams, append = false) {
+            const tbody = document.getElementById('dreamsBody');
+            
+            if (!append) {
+                tbody.innerHTML = '';
+            }
+
+            if (!dreams || dreams.length === 0) {
+                if (!append) {
+                    tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: #666;">No dreams found</td></tr>';
+                }
+                return;
+            }
+
+            dreams.forEach(dream => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td style="font-weight: 500;">${escapeHtml(dream.normalized_title || '')}</td>
+                    <td><strong>${(dream.count || 0).toLocaleString()}</strong></td>
+                    <td>${dream.avg_age ? dream.avg_age.toFixed(1) : '-'}</td>
+                    <td>${dream.min_age || '-'} - ${dream.max_age || '-'}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        async function loadCategories() {
+            const ageFrom = document.getElementById('catAgeFrom').value || 3;
+            const ageTo = document.getElementById('catAgeTo').value || 125;
+
+            const params = new URLSearchParams({
+                min_age: ageFrom,
+                max_age: ageTo
+            });
+
+            try {
+                const response = await fetch(`/api/categories-analysis?${params}`);
+                const data = await response.json();
+
+                if (data.error) {
+                    showError('API Error: ' + data.error);
+                    return;
+                }
+
+                displayCategories(data.categories || []);
+            } catch (error) {
+                console.error('Error loading categories:', error);
+                showError('Failed to load categories data');
+            }
+        }
+
+        function displayCategories(categories) {
+            const tbody = document.getElementById('categoriesBody');
+            tbody.innerHTML = '';
+
+            if (!categories || categories.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: #666;">No categories found</td></tr>';
+                return;
+            }
+
+            categories.forEach(cat => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td style="font-weight: 500;">${escapeHtml(cat.category || '')}</td>
+                    <td><strong>${(cat.count || 0).toLocaleString()}</strong></td>
+                    <td>${cat.avg_age ? cat.avg_age.toFixed(1) : '-'}</td>
+                    <td>${cat.min_age || '-'} - ${cat.max_age || '-'}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function clearFilters() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('ageFrom').value = '';
+            document.getElementById('ageTo').value = '';
+            document.getElementById('sortBy').value = 'count';
+            searchDreams();
+        }
+
+        function showError(message) {
+            const container = document.querySelector('.container');
+            const existing = container.querySelector('.error');
+            if (existing) existing.remove();
+            
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error';
+            errorDiv.textContent = message;
+            container.insertBefore(errorDiv, container.firstChild.nextSibling);
+            
+            setTimeout(() => errorDiv.remove(), 5000);
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>

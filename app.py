@@ -326,11 +326,16 @@ def debug_files():
 
 @app.route('/')
 def index():
-    """Serve the main dashboard"""
+    """Serve the working simple dashboard"""
+    return render_template('simple_dashboard.html')
+
+@app.route('/react')
+def react_dashboard():
+    """Serve the React dashboard (for debugging)"""
     if os.path.exists('templates/dashboard_spa.html'):
         return render_template('dashboard_spa.html')
     else:
-        return jsonify({'error': 'Dashboard not found'}), 404
+        return jsonify({'error': 'React dashboard not found'}), 404
 
 @app.route('/import')
 def import_page():
