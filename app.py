@@ -17,27 +17,43 @@ from datetime import datetime, timedelta
 from flask import Flask, render_template, jsonify, request
 from flask_cors import CORS
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder=None)  # Disable default static serving
 CORS(app)
 
-# Debug static file serving
+# Custom static file serving with detailed logging
 @app.route('/static/<path:filename>')
 def custom_static(filename):
-    """Debug static file serving"""
+    """Serve static files with detailed logging"""
     static_dir = os.path.join(app.root_path, 'static')
     file_path = os.path.join(static_dir, filename)
     
-    logger.info(f"Static file request: {filename}")
-    logger.info(f"Static dir: {static_dir}")
-    logger.info(f"File path: {file_path}")
-    logger.info(f"File exists: {os.path.exists(file_path)}")
+    logger.info(f"📁 Static file request: {filename}")
+    logger.info(f"📂 Static dir: {static_dir}")
+    logger.info(f"📄 File path: {file_path}")
+    logger.info(f"✅ File exists: {os.path.exists(file_path)}")
     
     if os.path.exists(file_path):
         file_size = os.path.getsize(file_path)
-        logger.info(f"File size: {file_size} bytes")
-    
-    from flask import send_from_directory
-    return send_from_directory(static_dir, filename)
+        logger.info(f"📊 File size: {file_size} bytes")
+        
+        from flask import send_from_directory, make_response
+        
+        try:
+            response = send_from_directory(static_dir, filename)
+            
+            # Add proper headers for JavaScript files
+            if filename.endswith('.js'):
+                response.headers['Content-Type'] = 'application/javascript; charset=utf-8'
+            
+            logger.info(f"✅ Successfully serving {filename} ({file_size} bytes)")
+            return response
+            
+        except Exception as e:
+            logger.error(f"❌ Error serving static file {filename}: {e}")
+            return f"Error serving file: {e}", 500
+    else:
+        logger.error(f"❌ Static file not found: {filename}")
+        return f"File not found: {filename}", 404
 
 # Configure logging
 logging.basicConfig(
