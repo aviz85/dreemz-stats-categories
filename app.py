@@ -195,6 +195,11 @@ def index():
     else:
         return jsonify({'error': 'Dashboard not found'}), 404
 
+@app.route('/import')
+def import_page():
+    """Serve the import interface page"""
+    return render_template('import.html')
+
 @app.route('/api/status')
 def api_status():
     """API endpoint for current status including import status"""
