@@ -310,7 +310,7 @@ def api_unique_dreams():
     
     try:
         conn = get_db_connection()
-        cursor = conn.cursor(psycopg2.extras.RealDictCursor)
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         
         # Build WHERE clause with proper parameter handling
         where_conditions = ["normalized_title_v3 IS NOT NULL", "normalized_title_v3 != ''"]
@@ -394,7 +394,7 @@ def api_dream_details(normalized_title):
     """Get detailed information about a specific normalized dream"""
     try:
         conn = get_db_connection()
-        cursor = conn.cursor(psycopg2.extras.RealDictCursor)
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         
         cursor.execute("""
             SELECT 
@@ -441,7 +441,7 @@ def api_all_titles():
     """Get all unique normalized titles for selection"""
     try:
         conn = get_db_connection()
-        cursor = conn.cursor(psycopg2.extras.RealDictCursor)
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         
         cursor.execute("""
             SELECT normalized_title_v3, COUNT(*) as count
@@ -466,7 +466,7 @@ def api_categories_analysis():
     
     try:
         conn = get_db_connection()
-        cursor = conn.cursor(psycopg2.extras.RealDictCursor)
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         
         cursor.execute("""
             WITH category_stats AS (
@@ -505,7 +505,7 @@ def api_categories_analysis():
             categories_data.append({
                 'category': row['category'],
                 'count': row['dream_count'],
-                'avg_age': row['avg_age'],
+                'avg_age': float(row['avg_age']) if row['avg_age'] else None,
                 'min_age': row['min_age'],
                 'max_age': row['max_age'],
                 'gender_dist': row['genders'],
@@ -526,7 +526,7 @@ def api_subcategories_analysis():
     
     try:
         conn = get_db_connection()
-        cursor = conn.cursor(psycopg2.extras.RealDictCursor)
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         
         cursor.execute("""
             WITH subcategory_stats AS (
@@ -565,7 +565,7 @@ def api_subcategories_analysis():
             categories_data.append({
                 'category': row['category'],
                 'count': row['dream_count'],
-                'avg_age': row['avg_age'],
+                'avg_age': float(row['avg_age']) if row['avg_age'] else None,
                 'min_age': row['min_age'],
                 'max_age': row['max_age'],
                 'gender_dist': row['genders'],
@@ -589,7 +589,7 @@ def api_category_dreams():
     
     try:
         conn = get_db_connection()
-        cursor = conn.cursor(psycopg2.extras.RealDictCursor)
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         
         filter_column = 'subcategory_1' if view_type == 'subcategories' else 'category_1'
         
@@ -664,4 +664,5 @@ def api_merge_titles():
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port, debug=False)
+    debug_mode = os.environ.get('DEBUG', 'False').lower() == 'true'
+    app.run(host='0.0.0.0', port=port, debug=debug_mode)
