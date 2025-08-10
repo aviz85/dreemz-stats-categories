@@ -24,9 +24,14 @@ print_success() {
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 cd "$SCRIPT_DIR"
 
-# Stop service
+# Stop service (if it exists)
 print_step "Stopping service..."
-sudo systemctl stop flask-dreemz
+if sudo systemctl is-active --quiet dreemz-analytics 2>/dev/null; then
+    sudo systemctl stop dreemz-analytics
+    print_success "Service stopped"
+else
+    print_step "Service not running or doesn't exist yet"
+fi
 
 # Pull changes
 print_step "Pulling latest code..."
@@ -49,11 +54,11 @@ fi
 
 # Start service
 print_step "Starting service..."
-sudo systemctl start flask-dreemz
+sudo systemctl start dreemz-analytics
 
 # Wait and test
 sleep 3
-if sudo systemctl is-active --quiet flask-dreemz; then
+if sudo systemctl is-active --quiet dreemz-analytics; then
     print_success "Service restarted successfully! 🚀"
     print_step "Testing API..."
     if curl -f -s -u admin:changeme123 http://localhost:5000/api/status > /dev/null; then
@@ -63,5 +68,5 @@ if sudo systemctl is-active --quiet flask-dreemz; then
     fi
 else
     echo "❌ Service failed to start"
-    sudo journalctl -u flask-dreemz --no-pager -n 10
+    sudo journalctl -u dreemz-analytics --no-pager -n 10
 fi
