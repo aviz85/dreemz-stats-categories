@@ -61,7 +61,8 @@ else
     source .venv/bin/activate
 fi
 
-pip install --upgrade pip
+# Fix Python 3.12+ distutils issue first
+pip install --upgrade pip setuptools wheel
 pip install -r requirements.txt
 print_success "Python dependencies updated"
 

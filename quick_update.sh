@@ -49,6 +49,9 @@ fi
 if [ -f "requirements.txt" ]; then
     print_step "Checking Python dependencies..."
     source .venv/bin/activate
+    
+    # Fix Python 3.12+ distutils issue
+    pip install --upgrade pip setuptools wheel --quiet
     pip install -r requirements.txt --quiet
 fi
 
