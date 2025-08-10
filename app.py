@@ -327,11 +327,8 @@ def api_unique_dreams():
         where_clause = " AND ".join(where_conditions)
         
         # Count total for pagination
-        cursor.execute(f"""
-            SELECT COUNT(DISTINCT normalized_title_v3) as count
-            FROM dreams 
-            WHERE {where_clause}
-        """, params)
+        count_query = "SELECT COUNT(DISTINCT normalized_title_v3) as count FROM dreams WHERE " + where_clause
+        cursor.execute(count_query, params)
         total_count = cursor.fetchone()['count']
         
         # Get the data
@@ -351,7 +348,7 @@ def api_unique_dreams():
         else:
             order_clause = "normalized_title_v3"
             
-        query = f"""
+        main_query = """
             SELECT 
                 normalized_title_v3,
                 COUNT(*) as count,
@@ -359,13 +356,13 @@ def api_unique_dreams():
                 MIN(age_at_dream) as min_age,
                 MAX(age_at_dream) as max_age
             FROM dreams 
-            WHERE {where_clause}
+            WHERE {} 
             GROUP BY normalized_title_v3
-            ORDER BY {order_clause} {sort_direction}
+            ORDER BY {} {}
             LIMIT %s OFFSET %s
-        """
+        """.format(where_clause, order_clause, sort_direction)
         
-        cursor.execute(query, params + [limit, offset])
+        cursor.execute(main_query, params + [limit, offset])
         
         dreams = []
         for row in cursor.fetchall():
