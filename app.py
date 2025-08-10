@@ -155,8 +155,9 @@ def run_import_in_background():
         import_status['error'] = None
         
         # Check if CSV exists
-        if not os.path.exists('dreams_export.csv'):
-            raise Exception('CSV file not found. Please ensure dreams_export.csv is in the deployment.')
+        csv_file = 'dreams_export_with_titles.csv' if os.path.exists('dreams_export_with_titles.csv') else 'dreams_export.csv'
+        if not os.path.exists(csv_file):
+            raise Exception(f'CSV file not found. Please ensure {csv_file} is in the deployment.')
         
         # Connect to database
         import_status['message'] = 'Connecting to database...'
@@ -186,7 +187,6 @@ def run_import_in_background():
         
         # Count total rows for progress tracking
         import_status['message'] = 'Counting rows in CSV...'
-        csv_file = 'dreams_export_with_titles.csv' if os.path.exists('dreams_export_with_titles.csv') else 'dreams_export.csv'
         with open(csv_file, 'r', encoding='utf-8') as f:
             total_rows = sum(1 for line in f) - 1  # Subtract header
         
