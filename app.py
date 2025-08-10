@@ -225,8 +225,12 @@ def start_import():
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute("SELECT COUNT(*) FROM dreams")
-        existing_count = cursor.fetchone()[0]
+        try:
+            cursor.execute("SELECT COUNT(*) FROM dreams")
+            existing_count = cursor.fetchone()[0]
+        except psycopg2.ProgrammingError:
+            # Table doesn't exist yet
+            existing_count = 0
         conn.close()
         
         if existing_count > 0:
@@ -308,7 +312,7 @@ def api_unique_dreams():
         conn = get_db_connection()
         cursor = conn.cursor(psycopg2.extras.RealDictCursor)
         
-        # Build WHERE clause
+        # Build WHERE clause with proper parameter handling
         where_conditions = ["normalized_title_v3 IS NOT NULL", "normalized_title_v3 != ''"]
         params = []
         
@@ -318,11 +322,11 @@ def api_unique_dreams():
         
         if age_from is not None:
             where_conditions.append("age_at_dream >= %s")
-            params.append(age_from)
+            params.append(int(age_from))
         
         if age_to is not None:
             where_conditions.append("age_at_dream <= %s")
-            params.append(age_to)
+            params.append(int(age_to))
         
         where_clause = " AND ".join(where_conditions)
         
@@ -362,7 +366,7 @@ def api_unique_dreams():
             LIMIT %s OFFSET %s
         """.format(where_clause, order_clause, sort_direction)
         
-        cursor.execute(main_query, params + [limit, offset])
+        cursor.execute(main_query, params + [int(limit), int(offset)])
         
         dreams = []
         for row in cursor.fetchall():
