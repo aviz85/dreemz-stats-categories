@@ -2,10 +2,46 @@ import axios from 'axios';
 
 const API_BASE = '/api';
 
+// Get credentials from localStorage or prompt user
+const getAuthCredentials = () => {
+  let auth = localStorage.getItem('auth');
+  if (!auth) {
+    const username = prompt('Enter username:');
+    const password = prompt('Enter password:');
+    if (username && password) {
+      auth = btoa(`${username}:${password}`);
+      localStorage.setItem('auth', auth);
+    }
+  }
+  return auth;
+};
+
 const api = axios.create({
   baseURL: API_BASE,
   timeout: 10000,
 });
+
+// Add authentication header to all requests
+api.interceptors.request.use((config) => {
+  const auth = getAuthCredentials();
+  if (auth) {
+    config.headers.Authorization = `Basic ${auth}`;
+  }
+  return config;
+});
+
+// Handle authentication errors
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response && error.response.status === 401) {
+      // Clear stored credentials and retry
+      localStorage.removeItem('auth');
+      window.location.reload();
+    }
+    return Promise.reject(error);
+  }
+);
 
 export const dashboardApi = {
   // Existing dashboard APIs

@@ -8,11 +8,36 @@ import os
 import sqlite3
 import json
 from datetime import datetime, timedelta
-from flask import Flask, render_template, jsonify, request
+from flask import Flask, render_template, jsonify, request, Response
+from flask_httpauth import HTTPBasicAuth
+from flask_cors import CORS
+from werkzeug.security import generate_password_hash, check_password_hash
+from dotenv import load_dotenv
 import numpy as np
 import faiss
+from functools import wraps
+
+# Load environment variables
+load_dotenv()
 
 app = Flask(__name__)
+CORS(app)  # Enable CORS for all routes
+auth = HTTPBasicAuth()
+
+# Get admin credentials from environment
+ADMIN_USERNAME = os.getenv('ADMIN_USERNAME', 'admin')
+ADMIN_PASSWORD = os.getenv('ADMIN_PASSWORD', 'changeme123')
+
+# Store hashed password
+users = {
+    ADMIN_USERNAME: generate_password_hash(ADMIN_PASSWORD)
+}
+
+@auth.verify_password
+def verify_password(username, password):
+    if username in users and check_password_hash(users.get(username), password):
+        return username
+    return None
 
 class SimilaritySearchSystem:
     def __init__(self):
@@ -298,6 +323,7 @@ def get_database_stats():
         }
 
 @app.route('/api/unique-dreams')
+@auth.login_required
 def api_unique_dreams():
     """Get unique dreams with filtering and pagination"""
     search = request.args.get('search', '')
@@ -399,6 +425,7 @@ def api_unique_dreams():
     })
 
 @app.route('/api/dream-details/<path:normalized_title>')
+@auth.login_required
 def api_dream_details(normalized_title):
     """Get detailed information about a specific normalized dream"""
     conn = sqlite3.connect("dreams_complete.db")
@@ -494,6 +521,7 @@ def api_dream_details(normalized_title):
     })
 
 @app.route('/api/similarity-search', methods=['POST'])
+@auth.login_required
 def api_similarity_search():
     """Search for similar dream titles"""
     data = request.json
@@ -516,6 +544,7 @@ def api_similarity_search():
     })
 
 @app.route('/api/all-titles')
+@auth.login_required
 def api_all_titles():
     """Get all unique normalized titles for selection"""
     conn = sqlite3.connect("dreams_complete.db")
@@ -535,6 +564,7 @@ def api_all_titles():
     return jsonify({'titles': titles})
 
 @app.route('/api/categories-analysis')
+@auth.login_required
 def api_categories_analysis():
     """Get category statistics for analysis"""
     min_age = request.args.get('min_age', 3, type=int)
@@ -593,6 +623,7 @@ def api_categories_analysis():
     return jsonify({'categories': categories_data})
 
 @app.route('/api/subcategories-analysis')
+@auth.login_required
 def api_subcategories_analysis():
     """Get subcategory statistics for analysis"""
     min_age = request.args.get('min_age', 3, type=int)
@@ -651,6 +682,7 @@ def api_subcategories_analysis():
     return jsonify({'categories': categories_data})
 
 @app.route('/api/category-dreams')
+@auth.login_required
 def api_category_dreams():
     """Get dreams for a specific category or subcategory"""
     category = request.args.get('category', '')
@@ -694,6 +726,7 @@ def api_category_dreams():
     return jsonify({'dreams': dreams})
 
 @app.route('/api/merge-titles', methods=['POST'])
+@auth.login_required
 def api_merge_titles():
     """Merge multiple dream titles into one"""
     data = request.json
