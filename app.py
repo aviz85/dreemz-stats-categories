@@ -328,7 +328,7 @@ def api_unique_dreams():
         
         # Count total for pagination
         cursor.execute(f"""
-            SELECT COUNT(DISTINCT normalized_title_v3) 
+            SELECT COUNT(DISTINCT normalized_title_v3) as count
             FROM dreams 
             WHERE {where_clause}
         """, params)
@@ -343,7 +343,15 @@ def api_unique_dreams():
         
         sort_direction = 'DESC' if sort_order == 'desc' else 'ASC'
         
-        cursor.execute(f"""
+        # Build safe query with proper parameter binding
+        if sort_column == 'COUNT(*)':
+            order_clause = "COUNT(*)"
+        elif sort_column == 'AVG(age_at_dream)':
+            order_clause = "AVG(age_at_dream)"
+        else:
+            order_clause = "normalized_title_v3"
+            
+        query = f"""
             SELECT 
                 normalized_title_v3,
                 COUNT(*) as count,
@@ -353,9 +361,11 @@ def api_unique_dreams():
             FROM dreams 
             WHERE {where_clause}
             GROUP BY normalized_title_v3
-            ORDER BY {sort_column} {sort_direction}
+            ORDER BY {order_clause} {sort_direction}
             LIMIT %s OFFSET %s
-        """, params + [limit, offset])
+        """
+        
+        cursor.execute(query, params + [limit, offset])
         
         dreams = []
         for row in cursor.fetchall():
