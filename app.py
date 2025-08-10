@@ -381,8 +381,8 @@ def api_unique_dreams():
         conn.close()
         
         return jsonify({
-            'dreams': dreams,
-            'total_count': total_count,
+            'dreams': dreams if dreams else [],
+            'total_count': total_count if total_count else 0,
             'page': offset // limit,
             'per_page': limit
         })
@@ -454,7 +454,7 @@ def api_all_titles():
         titles = [{'title': row['normalized_title_v3'], 'count': row['count']} for row in cursor.fetchall()]
         conn.close()
         
-        return jsonify({'titles': titles})
+        return jsonify({'titles': titles if titles else []})
     except Exception as e:
         return jsonify({'error': str(e), 'titles': []}), 500
 
@@ -514,7 +514,7 @@ def api_categories_analysis():
         
         conn.close()
         
-        return jsonify({'categories': categories_data})
+        return jsonify({'categories': categories_data if categories_data else []})
     except Exception as e:
         return jsonify({'error': str(e), 'categories': []}), 500
 
@@ -574,7 +574,7 @@ def api_subcategories_analysis():
         
         conn.close()
         
-        return jsonify({'categories': categories_data})
+        return jsonify({'categories': categories_data if categories_data else []})
     except Exception as e:
         return jsonify({'error': str(e), 'categories': []}), 500
 
@@ -619,7 +619,7 @@ def api_category_dreams():
         
         conn.close()
         
-        return jsonify({'dreams': dreams})
+        return jsonify({'dreams': dreams if dreams else []})
     except Exception as e:
         return jsonify({'error': str(e), 'dreams': []}), 500
 
