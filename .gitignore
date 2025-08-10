@@ -53,7 +53,6 @@ fix_*
 extract_*
 launch_*
 start_*
-*.sh
 auto_*
 background_*
 category_improvement_plan.py
@@ -107,6 +106,8 @@ fix_vps_deployment.sh
 vps_fix_oneliner.sh
 create_faiss_index.sh
 contabo_transfer_interactive.sh
+
+# NOTE: deploy_update.sh and quick_update.sh are ALLOWED (see exceptions above)
 
 # Keep only these essential files for GitHub:
 # app.py
