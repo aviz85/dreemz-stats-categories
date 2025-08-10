@@ -154,7 +154,7 @@ const dreamExplorer = {
                 <table>
                     <thead>
                         <tr>
-                            <th>User</th>
+                            <th>Dream ID</th>
                             <th>Age</th>
                             <th>Categories</th>
                         </tr>
@@ -168,9 +168,12 @@ const dreamExplorer = {
                 .map(cat => `${cat.category}${cat.subcategory ? ' → ' + cat.subcategory : ''}`)
                 .join('<br>') : 'No categories';
 
+            // Show original_id as a short identifier instead of username
+            const dreamId = dream.original_id ? dream.original_id.substring(0, 8) + '...' : 'Unknown';
+
             html += `
                 <tr>
-                    <td>${utils.escapeHtml(dream.username || 'Anonymous')}</td>
+                    <td style="font-family: monospace; font-size: 12px;">${utils.escapeHtml(dreamId)}</td>
                     <td>${dream.age || '-'}</td>
                     <td style="font-size: 12px;">${categories}</td>
                 </tr>
