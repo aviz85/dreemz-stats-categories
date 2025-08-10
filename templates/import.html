@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dream Data Import Manager</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 800px;
+            width: 100%;
+            padding: 40px;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 32px;
+        }
+        
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 28px;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .import-section {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 20px;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 20px;
+        }
+        
+        .status-ready { background: #e3f2fd; color: #1976d2; }
+        .status-running { background: #fff3e0; color: #f57c00; }
+        .status-success { background: #e8f5e9; color: #388e3c; }
+        .status-error { background: #ffebee; color: #d32f2f; }
+        
+        .status-message {
+            background: white;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            color: #333;
+        }
+        
+        .progress-container {
+            background: #e0e0e0;
+            border-radius: 10px;
+            height: 30px;
+            overflow: hidden;
+            margin-bottom: 10px;
+            position: relative;
+        }
+        
+        .progress-bar {
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            height: 100%;
+            border-radius: 10px;
+            transition: width 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        
+        .progress-text {
+            text-align: center;
+            color: #666;
+            font-size: 13px;
+            margin-bottom: 20px;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .btn-secondary {
+            background: white;
+            color: #667eea;
+            border: 2px solid #667eea;
+        }
+        
+        .btn-secondary:hover {
+            background: #f8f9fa;
+        }
+        
+        .warning-box {
+            background: #fff3e0;
+            border: 1px solid #ffb74d;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+            font-size: 13px;
+            color: #e65100;
+        }
+        
+        .info-box {
+            background: #e3f2fd;
+            border: 1px solid #64b5f6;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+            font-size: 13px;
+            color: #0d47a1;
+        }
+        
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .hidden { display: none !important; }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        
+        .modal.active { display: flex; }
+        
+        .modal-content {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            max-width: 500px;
+            width: 90%;
+        }
+        
+        .modal-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            color: #e65100;
+        }
+        
+        .modal-title {
+            font-size: 20px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        
+        .modal-body {
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 25px;
+        }
+        
+        .modal-footer {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+        
+        .icon {
+            width: 24px;
+            height: 24px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Dream Data Import Manager</h1>
+        <p class="subtitle">Import 115,624 dreams from CSV to PostgreSQL database</p>
+        
+        <!-- Database Stats -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value" id="totalDreams">0</div>
+                <div class="stat-label">Total Dreams</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="uniqueTitles">0</div>
+                <div class="stat-label">Unique Titles</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="categories">0</div>
+                <div class="stat-label">Categories</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="subcategories">0</div>
+                <div class="stat-label">Subcategories</div>
+            </div>
+        </div>
+        
+        <!-- Import Section -->
+        <div class="import-section">
+            <span id="statusBadge" class="status-badge status-ready">READY</span>
+            
+            <div id="statusMessage" class="status-message">
+                Ready to import dreams_export.csv (19.1 MB)
+            </div>
+            
+            <!-- Progress Bar (hidden initially) -->
+            <div id="progressSection" class="hidden">
+                <div class="progress-container">
+                    <div id="progressBar" class="progress-bar" style="width: 0%">
+                        <span id="progressPercent">0%</span>
+                    </div>
+                </div>
+                <div class="progress-text">
+                    <span id="progressText">Starting import...</span>
+                </div>
+            </div>
+            
+            <!-- Buttons -->
+            <div class="button-group">
+                <button id="importBtn" class="btn btn-primary" onclick="startImport()">
+                    <span id="btnIcon">📥</span>
+                    <span id="btnText">Start Import</span>
+                </button>
+                <button id="statusBtn" class="btn btn-secondary" onclick="checkStatus()">
+                    🔄 Check Status
+                </button>
+                <a id="dashboardBtn" href="/" class="btn btn-secondary hidden">
+                    📊 View Dashboard
+                </a>
+            </div>
+        </div>
+        
+        <!-- Info Box -->
+        <div class="info-box">
+            <strong>ℹ️ How it works:</strong><br>
+            • Click "Start Import" to begin the CSV import process<br>
+            • The import runs in the background (takes 2-3 minutes)<br>
+            • Progress updates automatically every second<br>
+            • Dashboard will be ready when import completes
+        </div>
+        
+        <!-- Warning Box (hidden initially) -->
+        <div id="warningBox" class="warning-box hidden">
+            <strong>⚠️ Warning:</strong> Database already contains data. Importing will replace all existing data.
+        </div>
+    </div>
+    
+    <!-- Confirmation Modal -->
+    <div id="confirmModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span class="icon">⚠️</span>
+                <div class="modal-title">Database Already Contains Data</div>
+            </div>
+            <div class="modal-body">
+                The database already contains <strong id="existingCount">0</strong> dreams. 
+                Starting a new import will delete all existing data and replace it with the CSV data.
+                <br><br>
+                Are you sure you want to continue?
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="confirmImport()">Yes, Replace All Data</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let isImporting = false;
+        let statusInterval = null;
+        
+        // Initialize on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            checkStatus();
+            fetchDatabaseStats();
+        });
+        
+        async function fetchDatabaseStats() {
+            try {
+                const response = await fetch('/api/status');
+                const data = await response.json();
+                
+                if (data.database) {
+                    document.getElementById('totalDreams').textContent = 
+                        data.database.total_dreams?.toLocaleString() || '0';
+                    document.getElementById('uniqueTitles').textContent = 
+                        data.database.unique_titles?.toLocaleString() || '0';
+                    document.getElementById('categories').textContent = 
+                        data.database.categories || '0';
+                    document.getElementById('subcategories').textContent = 
+                        data.database.subcategories || '0';
+                }
+            } catch (error) {
+                console.error('Error fetching stats:', error);
+            }
+        }
+        
+        async function checkStatus() {
+            try {
+                const response = await fetch('/api/import/status');
+                const status = await response.json();
+                updateUI(status);
+                
+                // If import is running, start polling
+                if (status.running && !statusInterval) {
+                    startPolling();
+                }
+                
+                // Refresh stats after successful import
+                if (status.success === true) {
+                    fetchDatabaseStats();
+                }
+            } catch (error) {
+                console.error('Error checking status:', error);
+            }
+        }
+        
+        async function startImport(force = false) {
+            try {
+                const response = await fetch('/api/import/start', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ force })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    isImporting = true;
+                    startPolling();
+                    updateUI(data.status);
+                } else {
+                    if (data.existing_count && !force) {
+                        // Show confirmation modal
+                        document.getElementById('existingCount').textContent = 
+                            data.existing_count.toLocaleString();
+                        document.getElementById('confirmModal').classList.add('active');
+                    } else {
+                        alert(data.message || 'Failed to start import');
+                    }
+                }
+            } catch (error) {
+                console.error('Error starting import:', error);
+                alert('Failed to start import: ' + error.message);
+            }
+        }
+        
+        function confirmImport() {
+            closeModal();
+            startImport(true);
+        }
+        
+        function closeModal() {
+            document.getElementById('confirmModal').classList.remove('active');
+        }
+        
+        function startPolling() {
+            if (statusInterval) clearInterval(statusInterval);
+            statusInterval = setInterval(checkStatus, 1000);
+        }
+        
+        function stopPolling() {
+            if (statusInterval) {
+                clearInterval(statusInterval);
+                statusInterval = null;
+            }
+        }
+        
+        function updateUI(status) {
+            const badge = document.getElementById('statusBadge');
+            const message = document.getElementById('statusMessage');
+            const progressSection = document.getElementById('progressSection');
+            const progressBar = document.getElementById('progressBar');
+            const progressPercent = document.getElementById('progressPercent');
+            const progressText = document.getElementById('progressText');
+            const importBtn = document.getElementById('importBtn');
+            const btnText = document.getElementById('btnText');
+            const btnIcon = document.getElementById('btnIcon');
+            const dashboardBtn = document.getElementById('dashboardBtn');
+            const warningBox = document.getElementById('warningBox');
+            
+            // Update status badge
+            badge.className = 'status-badge';
+            if (status.running) {
+                badge.className += ' status-running';
+                badge.textContent = 'RUNNING';
+                btnIcon.innerHTML = '<span class="spinner"></span>';
+                btnText.textContent = 'Importing...';
+                importBtn.disabled = true;
+            } else if (status.success === true) {
+                badge.className += ' status-success';
+                badge.textContent = 'COMPLETED';
+                btnIcon.textContent = '✅';
+                btnText.textContent = 'Import Complete';
+                importBtn.disabled = false;
+                dashboardBtn.classList.remove('hidden');
+                stopPolling();
+            } else if (status.success === false) {
+                badge.className += ' status-error';
+                badge.textContent = 'FAILED';
+                btnIcon.textContent = '❌';
+                btnText.textContent = 'Retry Import';
+                importBtn.disabled = false;
+                stopPolling();
+            } else {
+                badge.className += ' status-ready';
+                badge.textContent = 'READY';
+                btnIcon.textContent = '📥';
+                btnText.textContent = 'Start Import';
+                importBtn.disabled = false;
+            }
+            
+            // Update status message
+            message.textContent = status.message || 'Ready to import';
+            if (status.error) {
+                message.innerHTML += '<br><strong>Error:</strong> ' + status.error;
+            }
+            
+            // Update progress
+            if (status.running && status.total > 0) {
+                progressSection.classList.remove('hidden');
+                const percent = Math.round((status.progress / status.total) * 100);
+                progressBar.style.width = percent + '%';
+                progressPercent.textContent = percent + '%';
+                progressText.textContent = `${status.progress.toLocaleString()} / ${status.total.toLocaleString()} dreams imported`;
+            } else if (status.success === true) {
+                progressSection.classList.remove('hidden');
+                progressBar.style.width = '100%';
+                progressPercent.textContent = '100%';
+                progressText.textContent = `${(status.progress || 0).toLocaleString()} dreams successfully imported!`;
+            } else {
+                progressSection.classList.add('hidden');
+            }
+            
+            // Show warning if database has data
+            if (status.success === null && !status.running) {
+                // Check if database has data
+                fetch('/api/status').then(r => r.json()).then(data => {
+                    if (data.database && data.database.total_dreams > 0) {
+                        warningBox.classList.remove('hidden');
+                    }
+                });
+            }
+        }
+    </script>
+</body>
+</html>
