@@ -11,12 +11,52 @@ import json
 import csv
 import threading
 import time
+import logging
+import traceback
 from datetime import datetime, timedelta
 from flask import Flask, render_template, jsonify, request
 from flask_cors import CORS
 
 app = Flask(__name__)
 CORS(app)
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
+
+def log_api_call(endpoint, params=None, error=None):
+    """Log API calls with parameters and any errors"""
+    if error:
+        logger.error(f"API Error in {endpoint}: {error}")
+        logger.error(f"Parameters: {params}")
+        logger.error(f"Traceback: {traceback.format_exc()}")
+    else:
+        logger.info(f"API Call: {endpoint} with params: {params}")
+
+def safe_convert_types(data_dict):
+    """Safely convert database types to JSON-serializable types"""
+    try:
+        converted = {}
+        for key, value in data_dict.items():
+            if value is None:
+                converted[key] = None
+            elif hasattr(value, '__module__') and 'decimal' in value.__module__:
+                # Convert Decimal to float
+                converted[key] = round(float(value), 1) if 'age' in key.lower() else int(value)
+                logger.debug(f"Converted Decimal {key}: {value} -> {converted[key]}")
+            elif isinstance(value, (int, str, bool, list, dict)):
+                converted[key] = value
+            else:
+                # Log unexpected types
+                logger.warning(f"Unexpected type for {key}: {type(value)} = {value}")
+                converted[key] = str(value)
+        return converted
+    except Exception as e:
+        logger.error(f"Type conversion error: {e}")
+        return data_dict
 
 # Global import status
 import_status = {
@@ -308,6 +348,12 @@ def api_unique_dreams():
     sort_by = request.args.get('sort', 'count')
     sort_order = request.args.get('order', 'desc')
     
+    params_log = {
+        'search': search, 'age_from': age_from, 'age_to': age_to,
+        'limit': limit, 'offset': offset, 'sort_by': sort_by, 'sort_order': sort_order
+    }
+    log_api_call('/api/unique-dreams', params_log)
+    
     try:
         conn = get_db_connection()
         cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
@@ -370,13 +416,18 @@ def api_unique_dreams():
         
         dreams = []
         for row in cursor.fetchall():
-            dreams.append({
-                'normalized_title': row['normalized_title_v3'],
-                'count': int(row['count']) if row['count'] else 0,
-                'avg_age': round(float(row['avg_age']), 1) if row['avg_age'] else None,
-                'min_age': int(row['min_age']) if row['min_age'] else None,
-                'max_age': int(row['max_age']) if row['max_age'] else None
-            })
+            try:
+                dream_data = {
+                    'normalized_title': row['normalized_title_v3'],
+                    'count': int(row['count']) if row['count'] else 0,
+                    'avg_age': round(float(row['avg_age']), 1) if row['avg_age'] else None,
+                    'min_age': int(row['min_age']) if row['min_age'] else None,
+                    'max_age': int(row['max_age']) if row['max_age'] else None
+                }
+                dreams.append(dream_data)
+            except Exception as row_error:
+                logger.error(f"Error processing row in unique-dreams: {row_error}")
+                logger.error(f"Problematic row: {dict(row)}")
         
         conn.close()
         
@@ -387,6 +438,7 @@ def api_unique_dreams():
             'per_page': limit
         })
     except Exception as e:
+        log_api_call('/api/unique-dreams', params_log, str(e))
         return jsonify({'error': str(e), 'dreams': [], 'total_count': 0}), 500
 
 @app.route('/api/dream-details/<path:normalized_title>')
@@ -584,7 +636,11 @@ def api_category_dreams():
     category = request.args.get('category', '')
     view_type = request.args.get('type', 'categories')
     
+    params_log = {'category': category, 'type': view_type}
+    log_api_call('/api/category-dreams', params_log)
+    
     if not category:
+        logger.warning("Category parameter missing in /api/category-dreams")
         return jsonify({'error': 'Category parameter is required'}), 400
     
     try:
@@ -593,7 +649,7 @@ def api_category_dreams():
         
         filter_column = 'subcategory_1' if view_type == 'subcategories' else 'category_1'
         
-        cursor.execute(f"""
+        query = f"""
             SELECT 
                 normalized_title_v3,
                 COUNT(*) as count,
@@ -605,19 +661,30 @@ def api_category_dreams():
             GROUP BY normalized_title_v3
             ORDER BY count DESC
             LIMIT 100
-        """, (category,))
+        """
+        
+        logger.info(f"Category dreams query: {query}")
+        logger.info(f"Category filter: {category} on column {filter_column}")
+        
+        cursor.execute(query, (category,))
+        
+        results = cursor.fetchall()
+        logger.info(f"Category dreams query returned {len(results)} results")
         
         dreams = []
-        for row in cursor.fetchall():
+        for row in results:
             dreams.append({
                 'normalized_title': row['normalized_title_v3'],
-                'count': row['count'],
-                'min_age': row['min_age'],
-                'max_age': row['max_age'],
+                'count': int(row['count']) if row['count'] else 0,
+                'min_age': int(row['min_age']) if row['min_age'] else None,
+                'max_age': int(row['max_age']) if row['max_age'] else None,
                 'genders': row['genders']
             })
         
         conn.close()
+        
+        if not dreams:
+            logger.warning(f"No dreams found for category '{category}' with type '{view_type}'")
         
         return jsonify({'dreams': dreams if dreams else []})
     except Exception as e:
