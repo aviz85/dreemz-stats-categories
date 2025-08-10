@@ -1,0 +1,100 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+pip-log.txt
+pip-delete-this-directory.txt
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.log
+.git
+.mypy_cache
+.pytest_cache
+.hypothesis
+
+# Development files (for deployment branch)
+cohere_embedding.py
+dream_categories.py
+dream_normalizer_*
+enriched_*
+groq_*
+keyword_*
+llm_*
+*.log
+*.pid
+*.out
+*.stdout
+*_progress.json
+*_checkpoint.json
+batch*/
+*.csv
+test_*
+debug_*
+create_*
+monitor_*
+analyze_*
+fix_*
+extract_*
+launch_*
+start_*
+*.sh
+auto_*
+background_*
+category_improvement_plan.py
+category_mapper.py
+efficient_clustering.py
+english_*
+faiss_*
+final_*
+hierarchical_*
+improved_*
+intent_*
+large_dataset_analysis.py
+manual_check.py
+quick_*
+rename_*
+retry_*
+run_*
+sample_*
+show_*
+similarity_based_clustering.py
+simple_keyword_enricher.py
+space_*
+stable_*
+strict_*
+verify_*
+
+# Large files - ignore for GitHub
+dreams_complete.db
+*.db
+dreams_faiss_index.faiss
+*.faiss
+dreams_faiss_mapping.json
+
+# Archives and transfers
+*.tar.gz
+*.zip
+contabo_transfer.sh
+vps_setup_commands.txt
+nginx_fix.sh
+fix_vps_deployment.sh
+vps_fix_oneliner.sh
+create_faiss_index.sh
+contabo_transfer_interactive.sh
+
+# Keep only these essential files for GitHub:
+# app.py
+# static/
+# templates/
+# frontend/
+# requirements.txt
