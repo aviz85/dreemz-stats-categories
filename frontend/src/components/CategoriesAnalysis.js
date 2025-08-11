@@ -166,7 +166,7 @@ const CategoriesAnalysis = () => {
   const [sortBy, setSortBy] = useState('count');
   const [sortOrder, setSortOrder] = useState('desc');
   const [viewType, setViewType] = useState('categories'); // 'categories' or 'subcategories'
-  const [includeAll, setIncludeAll] = useState(false); // Include all categories (1,2,3) vs just category_1
+  const [includeAll, setIncludeAll] = useState(true); // Include all categories (1,2,3) vs just category_1 - DEFAULT TO ALL
   const [allAges, setAllAges] = useState(false); // Include all ages or use age filter
   
   // Pagination
