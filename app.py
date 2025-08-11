@@ -817,6 +817,29 @@ def api_merge_titles():
         print(f"Error merging titles: {e}")
         return jsonify({'error': 'Failed to merge titles'}), 500
 
+@app.route('/api/refresh-index', methods=['POST'])
+def api_refresh_index():
+    """Refresh the FAISS index after merging operations"""
+    try:
+        # Reload the FAISS index and metadata
+        if similarity_system.load_index():
+            return jsonify({
+                'success': True,
+                'total_titles': len(similarity_system.titles),
+                'unique_titles': len(set(similarity_system.titles))
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': 'Failed to reload FAISS index'
+            }), 500
+    except Exception as e:
+        print(f"Error refreshing index: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=False)

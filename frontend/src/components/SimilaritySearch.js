@@ -29,7 +29,11 @@ import {
   Slider,
   Pagination,
   ToggleButton,
-  ToggleButtonGroup
+  ToggleButtonGroup,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions
 } from '@mui/material';
 import {
   Search as SearchIcon,
@@ -37,8 +41,121 @@ import {
   Refresh as RefreshIcon,
   CheckCircle as CheckCircleIcon,
   ArrowUpward as ArrowUpwardIcon,
-  ArrowDownward as ArrowDownwardIcon
+  ArrowDownward as ArrowDownwardIcon,
+  Visibility as ViewIcon
 } from '@mui/icons-material';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as ChartTooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { dashboardApi } from '../utils/api';
+
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
+
+// Reusable DreamDetailsModal component (DRY principle - same as in UniqueDreams.js)
+const DreamDetailsModal = ({ open, onClose, normalizedTitle }) => {
+  const [details, setDetails] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (open && normalizedTitle) {
+      setLoading(true);
+      dashboardApi.getDreamDetails(normalizedTitle)
+        .then(response => {
+          setDetails(response.data);
+          setLoading(false);
+        })
+        .catch(err => {
+          console.error('Failed to fetch dream details:', err);
+          setLoading(false);
+        });
+    }
+  }, [open, normalizedTitle]);
+
+  return (
+    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
+      <DialogTitle>
+        Dream Analysis: "{normalizedTitle}"
+      </DialogTitle>
+      <DialogContent>
+        {loading ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
+            <CircularProgress />
+          </Box>
+        ) : details ? (
+          <Grid container spacing={3}>
+            <Grid item xs={12} md={6}>
+              <Typography variant="h6" gutterBottom>
+                Age Group Distribution
+              </Typography>
+              <ResponsiveContainer width="100%" height={200}>
+                <PieChart>
+                  <Pie
+                    dataKey="count"
+                    data={details.age_distribution}
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={80}
+                    fill="#8884d8"
+                    label={({ age_group, count }) => `${age_group}: ${count}`}
+                  >
+                    {details.age_distribution.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <ChartTooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            </Grid>
+            
+            <Grid item xs={12} md={6}>
+              <Typography variant="h6" gutterBottom>
+                Category Distribution
+              </Typography>
+              <ResponsiveContainer width="100%" height={200}>
+                <BarChart data={details.category_distribution}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="category" angle={-45} textAnchor="end" height={60} />
+                  <YAxis />
+                  <ChartTooltip />
+                  <Bar dataKey="count" fill="#667eea" />
+                </BarChart>
+              </ResponsiveContainer>
+            </Grid>
+
+            <Grid item xs={12}>
+              <Typography variant="h6" gutterBottom>
+                Sample Original Dreams ({details.sample_dreams.length} shown)
+              </Typography>
+              <Box sx={{ maxHeight: 300, overflow: 'auto' }}>
+                {details.sample_dreams.map((dream, index) => (
+                  <Box key={dream.dream_id} sx={{ p: 2, borderBottom: '1px solid #f0f0f0' }}>
+                    <Typography variant="body2" color="text.secondary">
+                      #{dream.dream_id} ({dream.age_group}): {dream.original_title}
+                    </Typography>
+                    <Box sx={{ mt: 1, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                      {dream.categories.map((cat, catIndex) => (
+                        <Chip
+                          key={catIndex}
+                          label={`${cat.category} / ${cat.subcategory}`}
+                          size="small"
+                          color={catIndex === 0 ? 'primary' : catIndex === 1 ? 'secondary' : 'success'}
+                          variant={catIndex === 0 ? 'filled' : 'outlined'}
+                        />
+                      ))}
+                    </Box>
+                  </Box>
+                ))}
+              </Box>
+            </Grid>
+          </Grid>
+        ) : (
+          <Alert severity="error">Failed to load dream details</Alert>
+        )}
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onClose}>Close</Button>
+      </DialogActions>
+    </Dialog>
+  );
+};
 
 const SimilaritySearch = () => {
   const [titles, setTitles] = useState([]);
@@ -58,6 +175,7 @@ const SimilaritySearch = () => {
   const [refreshingIndex, setRefreshingIndex] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(25);
+  const [detailsModal, setDetailsModal] = useState({ open: false, title: null });
 
   // Load all titles on mount
   useEffect(() => {
@@ -257,6 +375,14 @@ const SimilaritySearch = () => {
     }
   };
 
+  const openDetailsModal = (normalizedTitle) => {
+    setDetailsModal({ open: true, title: normalizedTitle });
+  };
+
+  const closeDetailsModal = () => {
+    setDetailsModal({ open: false, title: null });
+  };
+
   if (indexStatus === 'not_ready') {
     return (
       <Paper elevation={3} sx={{ p: 3, m: 2 }}>
@@ -369,12 +495,20 @@ const SimilaritySearch = () => {
             </Grid>
 
             {selectedTitle && (
-              <Box sx={{ mt: 2 }}>
+              <Box sx={{ mt: 2, display: 'flex', gap: 1, alignItems: 'center' }}>
                 <Chip
                   label={`Selected: ${selectedTitle.title} (${selectedTitle.count} dreams)`}
                   color="primary"
                   icon={<CheckCircleIcon />}
                 />
+                <Button
+                  size="small"
+                  variant="outlined"
+                  startIcon={<ViewIcon />}
+                  onClick={() => openDetailsModal(selectedTitle.title)}
+                >
+                  View Details
+                </Button>
               </Box>
             )}
           </Paper>
@@ -496,6 +630,14 @@ const SimilaritySearch = () => {
                         />
                       }
                     />
+                    <Button
+                      size="small"
+                      startIcon={<ViewIcon />}
+                      onClick={() => openDetailsModal(item.title)}
+                      sx={{ ml: 1 }}
+                    >
+                      Details
+                    </Button>
                   </ListItem>
                 ))}
               </List>
@@ -549,6 +691,13 @@ const SimilaritySearch = () => {
           </Grid>
         )}
       </Grid>
+
+      {/* Details Modal */}
+      <DreamDetailsModal
+        open={detailsModal.open}
+        onClose={closeDetailsModal}
+        normalizedTitle={detailsModal.title}
+      />
     </Box>
   );
 };
